@@ -1,12 +1,12 @@
-import { createContext, useCallback, useLayoutEffect, useContext, useEffect, useMemo, useId, useRef } from "react"
+import { createContext, useState, useCallback, useLayoutEffect, useContext, useEffect, useMemo, useId, useRef } from "react"
 
 const CanvasContext = createContext(null)
 
-export default function Canvas({
-    height = 1080, width = 1920, children, ...canvasProps }) {
+export default function Canvas({ children, ...canvasProps }) {
     const canvasRef = useRef(null)
     const items = useRef(new Map())
     const frame = useRef(0)
+    const [size, setSize] = useState({width : 0, height : 0})
 
     const draw = useCallback(() => {
         const canvas = canvasRef.current
@@ -46,20 +46,31 @@ export default function Canvas({
 
     useLayoutEffect(() => {
         const canvas = canvasRef.current
-        const dpr = window.devicePixelRatio || 1
-        canvas.width = Math.round(width * dpr)
-        canvas.height = Math.round(height * dpr)
-        canvas.style.width = `${width}px`
-        canvas.style.height = `${height}px`
-        invalidate()
-    }, [width, height, invalidate])
+        const parent = canvas.parentElement        
+        const updateSize = () => {
+            const width = parent.clientWidth 
+            const height = parent.clientHeight
+            const dpr = window.devicePixelRatio || 1
+            canvas.width = Math.round(width * dpr)
+            canvas.height = Math.round(height * dpr)
+            canvas.style.width = `${width}px`
+            canvas.style.height = `${height}px`
+
+            setSize({width, height})
+            invalidate()
+        }
+        updateSize()
+        const observer = new ResizeObserver(updateSize)
+        observer.observe(parent)
+
+        return () => observer.disconnect()
+
+    }, [invalidate])
 
     return (
         <CanvasContext.Provider value={api}>
-            <div className="overflow-auto">
                 <canvas ref={canvasRef} {...canvasProps} />
                 {children}
-            </div>
         </CanvasContext.Provider>
     )
 }

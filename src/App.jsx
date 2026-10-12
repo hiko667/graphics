@@ -12,16 +12,17 @@ export default function App() {
             <Menu/>
             <div className='h-100 w-100 gap-1 p-3 bg-dark d-flex'>
                 <Toolbar mode={mode} setMode={(e) => setMode(e)}/>
-                <div className='bg-light border rounded-1 m-3 d-flex flex-row'
+                <div className='bg-light border rounded-1 m-3 d-flex w-100 h-100 flex-row'
                     style={{
-                        maxHeight : "100%",
+                        maxHeight : "80%",
                         maxWidth : "100%"
                     }}
                     >
-                    {/* <DrawingSpace mode={mode}/> */}
-                    <Canvas className = "w-100 h-100">
-                        <Line x={1} y={12} vx={100} vy={100} width={10}/>
-                    </Canvas>
+                    <div className='w-100 h-100'>
+                        <Canvas className = "w-100">
+                            <Line x={1} y={12} vx={1000} vy={100} width={10}/>
+                        </Canvas>
+                    </div>
                 </div>
             </div>
         </>
