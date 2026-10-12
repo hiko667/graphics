@@ -7,7 +7,7 @@ export default function Menu(){
         <Navbar bg="dark">
             <Container className="d-flex mx-2">
                 <div className="d-flex justify-content-start gap-2">
-                    <Button variant="light">Settings</Button>
+                    <Button variant="outline-light">Settings</Button>
                 </div>
             </Container>
         </Navbar>
