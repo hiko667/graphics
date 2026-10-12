@@ -4,7 +4,7 @@ import { Button } from "react-bootstrap"
 export default function Toolbar({mode, setMode}){
     
     return(
-        <div className="bg-dark border rounded-1 flex d-flex"
+        <div className="bg-dark flex d-flex"
         style={{
             maxWidth : "50 px"
         }}
