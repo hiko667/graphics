@@ -2,11 +2,18 @@ import { createContext, useState, useCallback, useLayoutEffect, useContext, useE
 
 const CanvasContext = createContext(null)
 
-export default function Canvas({ children, ...canvasProps }) {
+export default function Canvas({ changeMousePosition, children, ...canvasProps }) {
     const canvasRef = useRef(null)
     const items = useRef(new Map())
     const frame = useRef(0)
     const [size, setSize] = useState({width : 0, height : 0})
+    const [currentFigure, setCurrentFigure] = useState(null);
+
+    const handleMouseMovement = (e) => {
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;   
+        changeMousePosition({x : x, y : y})     
+    }
 
     const draw = useCallback(() => {
         const canvas = canvasRef.current
@@ -69,7 +76,8 @@ export default function Canvas({ children, ...canvasProps }) {
 
     return (
         <CanvasContext.Provider value={api}>
-                <canvas ref={canvasRef} {...canvasProps} />
+                <canvas ref={canvasRef} {...canvasProps} 
+                onMouseMove={(e) => handleMouseMovement(e)}/>
                 {children}
         </CanvasContext.Provider>
     )
@@ -91,7 +99,7 @@ export function Line({
         (ctx) => {
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + vx, y + vy);
+            ctx.lineTo(vx, vy);
             ctx.strokeStyle = color;
             ctx.lineWidth = width;
             ctx.stroke();
@@ -99,5 +107,34 @@ export function Line({
         [x, y, vx, vy, color, width]
     );
     useDraw(draw)
+    return null;
+}
+
+export function Rectangle({x, y, w, h, color = "#000000", width = 1}){
+    const draw = useCallback(
+        (ctx) => {
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.stroke()
+        },
+        [x, y, w, h, color, width]
+    );
+    useDraw(draw);
+    return null;
+}
+
+export function Circle({x, y, radius, color = "#000000", width = 1}){
+    const draw = useCallback(
+        (ctx) => {
+            ctx.beginPath()
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.stroke()
+        }, [x, y, radius, color, width]
+    );
+    useDraw(draw);
     return null;
 }

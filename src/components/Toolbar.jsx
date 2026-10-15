@@ -19,7 +19,7 @@ export default function Toolbar({mode, setMode}){
                     <Circle color="#000000"/>
                 </Button>
                 <Button variant="light" disabled = {mode === "square" ? true : false}
-                onClick={() => setMode("square")}>
+                onClick={() => setMode("rectangle")}>
                     <Square color="#000000" />
                 </Button>
                 
