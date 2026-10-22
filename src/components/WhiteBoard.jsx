@@ -1,13 +1,21 @@
 import Canvas, { Rectangle, Line, Circle } from "./Canvas"
 import { useState } from "react"
+import TerminalModal from "./TerminalModal"
 
-export default function WhiteBoard({ mode }) {
+export default function WhiteBoard({ mode, show, onHide }) {
     const [items, setItems] = useState([])
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [lastClick, setLastClick] = useState({ x: 0, y: 0 })
     const [selectedId, setSelectedId] = useState(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [activeHandle, setActiveHandle] = useState(null)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+    const HANDLE_SIZE = 8;
+
+    const handleAddShape = (newShape) => {
+        setItems(prevItems => [newShape, ...prevItems]);
+    }
 
     const isNearEdge = (x, y, item) => {
         const distanceToSegment = (px, py, ax, ay, bx, by) => {
@@ -25,7 +33,7 @@ export default function WhiteBoard({ mode }) {
             const ry = item.h < 0 ? item.y + item.h : item.y
             const rw = Math.abs(item.w)
             const rh = Math.abs(item.h)
-            
+
             const onTop = Math.abs(y - ry) < 5 && x >= rx && x <= rx + rw
             const onBottom = Math.abs(y - (ry + rh)) < 5 && x >= rx && x <= rx + rw
             const onLeft = Math.abs(x - rx) < 5 && y >= ry && y <= ry + rh
@@ -38,8 +46,54 @@ export default function WhiteBoard({ mode }) {
         return false
     }
 
+    const getHandles = (item) => {
+        if (item.type === "line") {
+            return [
+                { name: "start", x: item.x, y: item.y },
+                { name: "end", x: item.vx, y: item.vy }
+            ]
+        }
+        if (item.type === "circle") {
+            return [
+                { name: "top", x: item.x, y: item.y - item.radius },
+                { name: "right", x: item.x + item.radius, y: item.y },
+                { name: "bottom", x: item.x, y: item.y + item.radius },
+                { name: "left", x: item.x - item.radius, y: item.y }
+            ]
+        }
+        if (item.type === "rectangle") {
+            const x2 = item.x + item.w
+            const y2 = item.y + item.h
+            return [
+                { name: "tl", x: item.x, y: item.y },
+                { name: "tr", x: x2, y: item.y },
+                { name: "br", x: x2, y: y2 },
+                { name: "bl", x: item.x, y: y2 }
+            ]
+        }
+        return []
+    }
+
+    const checkHandleClick = (x, y, item) => {
+        const handles = getHandles(item)
+        for (let h of handles) {
+            if (Math.hypot(x - h.x, y - h.y) <= HANDLE_SIZE) {
+                return h.name
+            }
+        }
+        return null
+    }
+
     const handleMouseDown = () => {
-        const clickedItemIndex = items.findIndex(item => 
+        if (selectedId !== null) {
+            const handleName = checkHandleClick(mousePosition.x, mousePosition.y, items[selectedId])
+            if (handleName) {
+                setActiveHandle(handleName)
+                return
+            }
+        }
+
+        const clickedItemIndex = items.findIndex(item =>
             isNearEdge(mousePosition.x, mousePosition.y, item)
         )
 
@@ -53,11 +107,58 @@ export default function WhiteBoard({ mode }) {
         } else {
             setLastClick(mousePosition)
             setSelectedId(null)
+            setActiveHandle(null)
         }
     }
 
     const handleMouseMove = (value) => {
         setMousePosition(value)
+
+        if (activeHandle !== null && selectedId !== null) {
+            setItems(prevItems => {
+                const updated = [...prevItems]
+                const item = { ...updated[selectedId] }
+
+                if (item.type === "line") {
+                    if (activeHandle === "start") {
+                        item.x = value.x
+                        item.y = value.y
+                    } else if (activeHandle === "end") {
+                        item.vx = value.x
+                        item.vy = value.y
+                    }
+                } else if (item.type === "circle") {
+                    item.radius = Math.hypot(value.x - item.x, value.y - item.y)
+                } else if (item.type === "rectangle") {
+                    if (activeHandle === "br") {
+                        item.w = value.x - item.x
+                        item.h = value.y - item.y
+                    } else if (activeHandle === "tl") {
+                        const oldX2 = item.x + item.w
+                        const oldY2 = item.y + item.h
+                        item.x = value.x
+                        item.y = value.y
+                        item.w = oldX2 - value.x
+                        item.h = oldY2 - value.y
+                    } else if (activeHandle === "tr") {
+                        const oldY2 = item.y + item.h
+                        item.y = value.y
+                        item.w = value.x - item.x
+                        item.h = oldY2 - value.y
+                    } else if (activeHandle === "bl") {
+                        const oldX2 = item.x + item.w
+                        item.x = value.x
+                        item.w = oldX2 - value.x
+                        item.h = value.y - item.y
+                    }
+                }
+
+                updated[selectedId] = item
+                return updated
+            })
+            return
+        }
+
         if (isDragging && selectedId !== null) {
             setItems(prevItems => {
                 const updated = [...prevItems]
@@ -82,21 +183,25 @@ export default function WhiteBoard({ mode }) {
     }
 
     const handleMouseUp = () => {
-        setSelectedId(null)
+        if (activeHandle) {
+            setActiveHandle(null)
+            return
+        }
+
         if (isDragging) {
             setIsDragging(false)
             return
         }
-        
+
         if (selectedId === null && mode) {
             let newItem;
             switch (mode) {
                 case "line":
                     newItem = {
-                        type: mode, 
-                        x: lastClick.x, 
-                        y: lastClick.y, 
-                        vx: mousePosition.x, 
+                        type: mode,
+                        x: lastClick.x,
+                        y: lastClick.y,
+                        vx: mousePosition.x,
                         vy: mousePosition.y
                     }
                     break;
@@ -113,8 +218,8 @@ export default function WhiteBoard({ mode }) {
                     const w = mousePosition.x - lastClick.x;
                     const h = mousePosition.y - lastClick.y;
                     newItem = {
-                        type: mode, 
-                        x: lastClick.x, 
+                        type: mode,
+                        x: lastClick.x,
                         y: lastClick.y,
                         w: w,
                         h: h
@@ -138,27 +243,44 @@ export default function WhiteBoard({ mode }) {
         }
 
         switch (element.type) {
-            case "circle": 
+            case "circle":
                 props = { radius: element.radius, ...props }
                 return <Circle key={index} {...props} />
-            case "rectangle": 
+            case "rectangle":
                 props = { h: element.h, w: element.w, ...props }
                 return <Rectangle key={index} {...props} />
-            case "line": 
+            case "line":
                 props = { vx: element.vx, vy: element.vy, ...props }
                 return <Line key={index} {...props} />
             default: return null
         }
     }
 
+    const renderHandles = () => {
+        if (selectedId === null || !items[selectedId]) return null
+        const handles = getHandles(items[selectedId])
+        return handles.map((h, i) => (
+            <Circle
+                key={`handle-${i}`}
+                x={h.x}
+                y={h.y}
+                radius={HANDLE_SIZE / 2}
+                color="#0000ff"
+                width={2}
+            />
+        ))
+    }
+
     return (
         <div style={{ width: "100%", height: "100%" }} className="w-100 h-100">
-            <Canvas 
-                onMouseDown={handleMouseDown} 
-                onMouseUp={handleMouseUp} 
+            <TerminalModal show={show} onHide={onHide} onAddShape={handleAddShape} />
+            <Canvas
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
                 changeMousePosition={handleMouseMove}
             >
                 {items.map((e, index) => renderComponent(e, index))}
+                {renderHandles()}
             </Canvas>
         </div>
     )
