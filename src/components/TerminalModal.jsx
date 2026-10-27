@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 
-export default function TerminalModal({ show, onHide, onAddShape }) {
+export default function TerminalModal({ show, onHide, onAddShape, selectedItem, onUpdateShape }) {
     const [shapeType, setShapeType] = useState("rectangle");
     const [formData, setFormData] = useState({
         x: "0",
@@ -13,6 +13,21 @@ export default function TerminalModal({ show, onHide, onAddShape }) {
         vy: "100"
     });
 
+    useEffect(() => {
+        if (selectedItem) {
+            setShapeType(selectedItem.type);
+            setFormData({
+                x: String(selectedItem.x ?? 0),
+                y: String(selectedItem.y ?? 0),
+                w: String(selectedItem.w ?? 100),
+                h: String(selectedItem.h ?? 50),
+                radius: String(selectedItem.radius ?? 50),
+                vx: String(selectedItem.vx ?? 100),
+                vy: String(selectedItem.vy ?? 100)
+            });
+        }
+    }, [selectedItem]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -23,7 +38,6 @@ export default function TerminalModal({ show, onHide, onAddShape }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        let newShape;
 
         const x = parseFloat(formData.x) || 0;
         const y = parseFloat(formData.y) || 0;
@@ -33,39 +47,42 @@ export default function TerminalModal({ show, onHide, onAddShape }) {
         const vx = parseFloat(formData.vx) || 0;
         const vy = parseFloat(formData.vy) || 0;
 
-        switch (shapeType) {
-            case "rectangle":
-                newShape = {
-                    type: "rectangle",
-                    x: x,
-                    y: y,
-                    w: w,
-                    h: h
-                };
-                break;
-            case "circle":
-                newShape = {
-                    type: "circle",
-                    x: x,
-                    y: y,
-                    radius: radius
-                };
-                break;
-            case "line":
-                newShape = {
-                    type: "line",
-                    x: x,
-                    y: y,
-                    vx: vx,
-                    vy: vy
-                };
-                break;
-            default:
-                return;
-        }
-
-        if (onAddShape) {
-            onAddShape(newShape);
+        if (selectedItem) {
+            let updatedData;
+            switch (shapeType) {
+                case "rectangle":
+                    updatedData = { x, y, w, h };
+                    break;
+                case "circle":
+                    updatedData = { x, y, radius };
+                    break;
+                case "line":
+                    updatedData = { x, y, vx, vy };
+                    break;
+                default:
+                    return;
+            }
+            if (onUpdateShape) {
+                onUpdateShape(updatedData);
+            }
+        } else {
+            let newShape;
+            switch (shapeType) {
+                case "rectangle":
+                    newShape = { type: "rectangle", x, y, w, h };
+                    break;
+                case "circle":
+                    newShape = { type: "circle", x, y, radius };
+                    break;
+                case "line":
+                    newShape = { type: "line", x, y, vx, vy };
+                    break;
+                default:
+                    return;
+            }
+            if (onAddShape) {
+                onAddShape(newShape);
+            }
         }
         onHide();
     };
@@ -73,21 +90,23 @@ export default function TerminalModal({ show, onHide, onAddShape }) {
     return (
         <Modal show={show} onHide={onHide}>
             <Modal.Header closeButton>
-                <Modal.Title>Dodaj kształt</Modal.Title>
+                <Modal.Title>{selectedItem ? "Edytuj kształt" : "Dodaj kształt"}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Typ kształtu</Form.Label>
-                        <Form.Select 
-                            value={shapeType} 
-                            onChange={(e) => setShapeType(e.target.value)}
-                        >
-                            <option value="rectangle">Prostokąt</option>
-                            <option value="circle">Koło</option>
-                            <option value="line">Linia</option>
-                        </Form.Select>
-                    </Form.Group>
+                    {!selectedItem && (
+                        <Form.Group className="mb-3">
+                            <Form.Label>Typ kształtu</Form.Label>
+                            <Form.Select 
+                                value={shapeType} 
+                                onChange={(e) => setShapeType(e.target.value)}
+                            >
+                                <option value="rectangle">Prostokąt</option>
+                                <option value="circle">Koło</option>
+                                <option value="line">Linia</option>
+                            </Form.Select>
+                        </Form.Group>
+                    )}
 
                     <Form.Group className="mb-3">
                         <Form.Label>Współrzędna X (początek/środek)</Form.Label>
@@ -168,7 +187,7 @@ export default function TerminalModal({ show, onHide, onAddShape }) {
                     )}
 
                     <Button variant="primary" type="submit">
-                        Dodaj
+                        {selectedItem ? "Zapisz zmiany" : "Dodaj"}
                     </Button>
                 </Form>
             </Modal.Body>

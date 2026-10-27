@@ -1,8 +1,8 @@
 import Canvas, { Rectangle, Line, Circle } from "./Canvas"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import TerminalModal from "./TerminalModal"
 
-export default function WhiteBoard({ mode, show, onHide }) {
+export default function WhiteBoard({ mode, show, onHide, fileTrigger }) {
     const [items, setItems] = useState([])
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const [lastClick, setLastClick] = useState({ x: 0, y: 0 })
@@ -12,6 +12,65 @@ export default function WhiteBoard({ mode, show, onHide }) {
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
     const HANDLE_SIZE = 8;
+
+    useEffect(() => {
+        if (fileTrigger === "save") {
+            const serializedItems = items.map(item => ({
+                type: item.type,
+                x: item.x,
+                y: item.y,
+                ...(item.vx !== undefined && { vx: item.vx }),
+                ...(item.vy !== undefined && { vy: item.vy }),
+                ...(item.radius !== undefined && { radius: item.radius }),
+                ...(item.w !== undefined && { w: item.w }),
+                ...(item.h !== undefined && { h: item.h }),
+                ...(item.color && { color: item.color }),
+                ...(item.width !== undefined && { width: item.width })
+            }));
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(serializedItems));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "whiteboard.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+        if (fileTrigger === "load") {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const parsed = JSON.parse(event.target.result);
+                            const deserializedItems = parsed.map(item => ({
+                                type: item.type,
+                                x: item.x,
+                                y: item.y,
+                                ...(item.vx !== undefined && { vx: item.vx }),
+                                ...(item.vy !== undefined && { vy: item.vy }),
+                                ...(item.radius !== undefined && { radius: item.radius }),
+                                ...(item.w !== undefined && { w: item.w }),
+                                ...(item.h !== undefined && { h: item.h }),
+                                ...(item.color && { color: item.color }),
+                                ...(item.width !== undefined && { width: item.width })
+                            }));
+                            setItems(deserializedItems);
+                        } catch (err) {
+                            console.error("Błąd parsowania pliku");
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+    }, [fileTrigger])
+
 
     const handleAddShape = (newShape) => {
         setItems(prevItems => [newShape, ...prevItems]);
@@ -255,7 +314,17 @@ export default function WhiteBoard({ mode, show, onHide }) {
             default: return null
         }
     }
-
+    const handleUpdateShape = (newValues) => {
+        if (selectedId === null) return
+        setItems(prevItems => {
+            const updated = [...prevItems]
+            updated[selectedId] = {
+                ...updated[selectedId],
+                ...newValues
+            }
+            return updated
+        })
+    }
     const renderHandles = () => {
         if (selectedId === null || !items[selectedId]) return null
         const handles = getHandles(items[selectedId])
@@ -273,7 +342,13 @@ export default function WhiteBoard({ mode, show, onHide }) {
 
     return (
         <div style={{ width: "100%", height: "100%" }} className="w-100 h-100">
-            <TerminalModal show={show} onHide={onHide} onAddShape={handleAddShape} />
+            <TerminalModal 
+                show={show} 
+                onHide={onHide} 
+                onAddShape={handleAddShape} 
+                selectedItem={selectedId !== null ? items[selectedId] : null}
+                onUpdateShape={handleUpdateShape}
+            />            
             <Canvas
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}

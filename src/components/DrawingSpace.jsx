@@ -9,13 +9,14 @@ import { useState } from "react";
 export default function DrawingSpace(){
     const [mode, setMode] = useState("line")
     const [showTerminal, setShowTerminal] = useState(false)
+    const [fileTrigger, setFileTrigger] = useState("")
     return(
         <div className="w-100 vh-100 d-flex flex-column overflow-hidden">
-            <Menu handleTerminal = {() => {setShowTerminal(true)}}/>
+            <Menu handleTerminal = {() => {setShowTerminal(true)}} setTrigger = {(e) => {setFileTrigger(e)}}/>
             <div className='w-100 flex-grow-1 gap-1 p-1 bg-dark d-flex overflow-hidden'>
                 <Toolbar mode={mode} setMode={(e) => setMode(e)}/>
                 <div className='bg-light m-3 d-flex flex-grow-1 overflow-hidden'>
-                    <WhiteBoard mode={mode} show={showTerminal} onHide={() => setShowTerminal(false)}/>
+                    <WhiteBoard mode={mode} fileTrigger = {fileTrigger} show={showTerminal} onHide={() => setShowTerminal(false)}/>
                 </div>
             </div>
         </div>
