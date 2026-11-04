@@ -74,7 +74,7 @@ export default function PicSpace({ setErrorMessage, setIsDragging, setDragStart,
                     : new Uint8ClampedArray(imgData.data);
                 imgData = new ImageData(clamped, imgData.width, imgData.height);
             } catch (err) {
-                console.error("Nie można skonwertować imageBuffer do ImageData:", err);
+                setErrorMessage(`Cant convert imageBuffer to ImageData: ${err.message}`)
                 return;
             }
         }

@@ -50,16 +50,13 @@ export default function App(){
             return new TextDecoder('ascii').decode(bytes.subarray(start, offset));
         };
         const header = readToken();
-        if (header !== 'P3' && header !== 'P6') {
-            throw new Error('Nieobsługiwany format PPM. Wymagany format P3 lub P6.');
-        }
 
         const width = parseInt(readToken(), 10);
         const height = parseInt(readToken(), 10);
         const maxVal = parseInt(readToken(), 10);
 
         if (isNaN(width) || isNaN(height) || isNaN(maxVal) || maxVal <= 0) {
-            throw new Error('Błąd w nagłówku pliku PPM.');
+            throw new Error('PPM header error.');
         }
 
         if (header === 'P6' && offset < bytes.length && bytes[offset] <= 32) {
@@ -84,7 +81,7 @@ export default function App(){
                 const b = parseInt(bToken, 10);
 
                 if (isNaN(r) || isNaN(g) || isNaN(b)) {
-                    throw new Error('Błąd danych w pliku P3.');
+                    throw new Error('Bad data at P3.');
                 }
 
                 data[i] = Math.round((r / maxVal) * 255);
@@ -99,7 +96,7 @@ export default function App(){
             const pixelData = bytes.subarray(offset, offset + totalBytes);
 
             if (pixelData.length < totalBytes) {
-                throw new Error('Plik P6 jest niekompletny.');
+                throw new Error('P6 file uncomplete.');
             }
 
             let srcIdx = 0;
@@ -139,7 +136,7 @@ export default function App(){
 
             img.onerror = () => {
                 URL.revokeObjectURL(url);
-                reject(new Error('Błąd wczytywania pliku JPEG/PNG.'));
+                reject(new Error('Failed at loading JPEG/PNG'));
             };
 
             img.src = url;
@@ -162,7 +159,7 @@ export default function App(){
             link.download = `image_q${Math.round(jpegQuality * 100)}.jpg`;
             link.click();
         } catch (err) {
-            setErrorMessage('Błąd zapisu JPEG: ' + err.message);
+            setErrorMessage('Failed saving JPEG: ' + err.message);
         }
     };
 
@@ -177,10 +174,10 @@ export default function App(){
                 const parsedData = await parseStandardImage(file);
                 setImageBuffer(parsedData);
             }else{
-                throw new Error('Nieznany format pliku, dopuszczalne: ppm, jpg, jpeg, png')
+                throw new Error('Unknown file format: ppm, jpg, jpeg, png')
             }
         }catch(error){
-            setErrorMessage(error)
+            setErrorMessage(error.message)
         }
     }
 
