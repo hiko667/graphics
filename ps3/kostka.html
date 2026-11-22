@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Kostka RGB 3D z Przekrojem</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #controls div {
+            margin-bottom: 8px;
+        }
+        label { margin-right: 5px; }
+        input[type="radio"] { margin-left: 5px; }
+    </style>
+</head>
+<body>
+    
+    <div id="controls">
+        <div>
+            <label>Oś przekroju:</label>
+            <input type="radio" id="axis-x" name="clipping-axis" value="x" checked>
+            <label for="axis-x">X</label>
+            <input type="radio" id="axis-y" name="clipping-axis" value="y">
+            <label for="axis-y">Y</label>
+            <input type="radio" id="axis-z" name="clipping-axis" value="z">
+            <label for="axis-z">Z</label>
+        </div>
+        <div>
+            <label for="clipping-slider">Pozycja przekroju:</label>
+            <input type="range" id="clipping-slider" min="-0.6" max="0.6" step="0.01" value="0.6">
+        </div>
+    </div>
+    <script type="importmap">
+        {
+        "imports": {
+            "three": "https://esm.sh/three@0.163.0",
+            "three/addons/": "https://esm.sh/three@0.163.0/examples/jsm/"
+        }
+        }
+    </script>
+    <script type="module" src="./script_kostka.js"></script>
+</body>
+</html>
