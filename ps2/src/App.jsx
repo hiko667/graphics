@@ -4,7 +4,6 @@ import { FilePlus2Icon } from "lucide-react"
 import ErorrModal from "./components/ErrorModal"
 import { useState, useEffect } from "react"
 import PicSpace from "./components/PicSpace"
-import ImageViewer from "./components/gem"
 
 export default function App(){
     const [showModal, setShowModal] = useState(false)
@@ -54,10 +53,6 @@ export default function App(){
         const width = parseInt(readToken(), 10);
         const height = parseInt(readToken(), 10);
         const maxVal = parseInt(readToken(), 10);
-
-        if (isNaN(width) || isNaN(height) || isNaN(maxVal) || maxVal <= 0) {
-            throw new Error('PPM header error.');
-        }
 
         if (header === 'P6' && offset < bytes.length && bytes[offset] <= 32) {
             offset++;

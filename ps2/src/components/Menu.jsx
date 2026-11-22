@@ -13,9 +13,7 @@ export default function Menu({ onFileUpload, onSaveJPG, jpegQuality, setJpegQual
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && onFileUpload) {
-            onFileUpload(file);
-        }
+        onFileUpload(file);
     };
 
     return (
